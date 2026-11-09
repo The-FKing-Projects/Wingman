@@ -1,4 +1,4 @@
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -9,12 +9,12 @@ pub fn run() {
                 app,
                 "webview-test",
                 WebviewUrl::External(
-                    "https://example.com"
+                    "https://copilot.com/chat"
                         .parse()
                         .expect("Invalid URL"),
                 ),
             )
-            .title("Wingman WebView Test")
+            .title("Wingman Copilot Test")
             .inner_size(1200.0, 800.0)
             .build()?;
 
