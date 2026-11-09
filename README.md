@@ -1,21 +1,21 @@
-Wingman is a lightweight Linux desktop client for Microsoft Copilot built with Tauri.
+Wingman is a lightweight Linux desktop wrapper for Microsoft Copilot built with Tauri.
 
-The goal of the project is to provide a native desktop experience for Linux users without relying on browser tabs, unofficial Snap packages, or heavyweight Electron-based wrappers.
+The goal of the project is to provide a simple and reliable Linux desktop experience without relying on browser tabs, unofficial packages, or heavyweight Electron-based solutions.
 
 ## Features
 
 - Native Linux desktop application
-- Persistent login sessions
 - Lightweight Tauri-based architecture
-- System integration and notifications
+- Persistent login sessions
+- System integration
 - Simple and focused user experience
 
 ## Goals
 
 - Provide a reliable Linux desktop experience for Microsoft Copilot
-- Minimize memory and storage footprint
+- Minimize memory and storage requirements
 - Preserve login sessions between launches
-- Package cleanly as a .deb for Debian and Ubuntu based distributions
+- Package cleanly for Linux distributions
 - Remain easy to build and maintain
 
 ## Planned Features
@@ -23,10 +23,9 @@ The goal of the project is to provide a native desktop experience for Linux user
 - [ ] Initial Tauri application
 - [ ] Copilot web wrapper
 - [ ] Session persistence
-- [ ] Linux desktop notifications
-- [ ] System tray support
 - [ ] Native package generation
-- [ ] Automatic update checks
+- [ ] Desktop notifications
+- [ ] System tray support
 
 ## Disclaimer
 
