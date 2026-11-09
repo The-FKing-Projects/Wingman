@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "wingman",
+  "productName": "Wingman",
   "version": "0.1.0",
   "identifier": "org.thefkingprojects.wingman",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "wingman",
+        "title": "Wingman",
         "width": 800,
         "height": 600
       }
