@@ -1,8 +1,8 @@
 [package]
 name = "wingman"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "A native Linux desktop wrapper for Microsoft Copilot."
+authors = ["Wingman contributors"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
