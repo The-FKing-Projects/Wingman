@@ -5,16 +5,16 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let _test_window = WebviewWindowBuilder::new(
+            let _copilot_window = WebviewWindowBuilder::new(
                 app,
-                "webview-test",
+                "copilot",
                 WebviewUrl::External(
                     "https://copilot.com/chat"
                         .parse()
                         .expect("Invalid URL"),
                 ),
             )
-            .title("Wingman Copilot Test")
+            .title("Wingman")
             .inner_size(1200.0, 800.0)
             .build()?;
 
