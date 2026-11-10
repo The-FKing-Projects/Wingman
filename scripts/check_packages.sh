@@ -42,13 +42,17 @@ check_tree() {
 }
 
 cd "$artifacts"
-sha256sum -c SHA256SUMS
 shopt -s nullglob
 debs=(*.deb)
 rpms=(*.rpm)
 images=(*.AppImage)
 [[ ${#debs[@]} == 1 && ${#rpms[@]} == 1 && ${#images[@]} == 1 ]] \
   || fail "Expected exactly one DEB, RPM, and AppImage"
+[[ -f SHA256SUMS ]] || fail "Missing checksum manifest"
+expected_manifest=$(sha256sum -- "${debs[@]}" "${rpms[@]}" "${images[@]}" | LC_ALL=C sort)
+diff -u <(printf '%s\n' "$expected_manifest") <(LC_ALL=C sort SHA256SUMS) \
+  || fail "Checksum manifest must cover exactly the three packages with matching hashes"
+sha256sum -c SHA256SUMS
 
 deb=${debs[0]}
 require_equal "$(dpkg-deb -f "$deb" Package)" wingman "DEB name"
@@ -65,7 +69,7 @@ check_tree "$work/deb" "$work/deb/usr/share/applications/Wingman.desktop" \
 echo "DEB metadata, dependencies, launcher, icon, and ELF architecture verified"
 
 rpm=${rpms[0]}
-require_equal "$(rpm -qp --qf '%{NAME}' "$rpm")" Wingman "RPM name"
+require_equal "$(rpm -qp --qf '%{NAME}' "$rpm")" wingman "RPM name"
 require_equal "$(rpm -qp --qf '%{VERSION}' "$rpm")" "$version" "RPM version"
 require_equal "$(rpm -qp --qf '%{ARCH}' "$rpm")" x86_64 "RPM architecture"
 dependencies=$(rpm -qp --requires "$rpm")
@@ -80,6 +84,7 @@ check_tree "$work/rpm" "$work/rpm/usr/share/applications/Wingman.desktop" \
 echo "RPM metadata, dependencies, launcher, icon, and ELF architecture verified"
 
 image="$artifacts/${images[0]}"
+require_equal "${images[0]}" "Wingman_${version}_amd64.AppImage" "AppImage filename"
 # Only the AppImage runtime's extraction mode runs; never launch the application.
 chmod +x "$image"
 (cd "$work" && "$image" --appimage-extract > /dev/null)

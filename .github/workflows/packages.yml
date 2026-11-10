@@ -72,14 +72,10 @@ jobs:
         run: |
           version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')
           bash scripts/check_packages.sh artifacts "$version"
-      - name: Confirm mismatched package versions are rejected
+      - name: Test package verification rejection paths
         run: |
-          if bash scripts/check_packages.sh artifacts invalid-version > version-rejection.txt 2>&1; then
-            echo "::error::Package verification accepted an incorrect version"
-            exit 1
-          fi
-          cat version-rejection.txt
-          grep -q 'DEB version: expected' version-rejection.txt
+          version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')
+          bash scripts/test_packages.sh artifacts "$version"
       - name: Install DEB and check native library resolution
         run: |
           sudo apt-get install -y ./artifacts/*.deb
