@@ -7,7 +7,7 @@ An internet connection is required.
 
 ## Current release
 
-[v0.2.0-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.0-alpha)
+[v0.2.1-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.1-alpha)
 is an early testing release, not a stable release.
 
 - Native single-window application and desktop launcher.
@@ -16,8 +16,11 @@ is an early testing release, not a stable release.
 - Browser data is stored on disk, but reliable sign-in across restarts is **not**
   established.
 
-The installed DEB was tested by the maintainer on Ubuntu 26.04.1. RPM and AppImage
-assets exist, but installation and runtime behavior have not yet been verified.
+This patch release adds automated builds and package verification, not changes to
+the application's browsing or authentication behavior. The previous 0.2.0 DEB
+was tested by the maintainer on Ubuntu 26.04.1; 0.2.1 has automated DEB installation
+and native-library checks on Ubuntu 24.04. RPM and AppImage payloads are inspected,
+but their installation and desktop runtime behavior have not yet been verified.
 There is not yet a tested cross-distribution support matrix. Packages depend on
 their host's native libraries; an AppImage does not guarantee compatibility with
 every Linux distribution or graphics driver.
@@ -29,14 +32,14 @@ alpha assets:
 
 ```sh
 # Debian/Ubuntu: run from the download directory.
-sudo apt install ./Wingman_0.2.0_amd64.deb
+sudo apt install ./Wingman_0.2.1_amd64.deb
 
 # Fedora/RPM systems: available, but not yet runtime-verified.
-sudo dnf install ./Wingman-0.2.0-1.x86_64.rpm
+sudo dnf install ./Wingman-0.2.1-1.x86_64.rpm
 
 # AppImage: available, but not yet runtime-verified.
-chmod +x Wingman_0.2.0_amd64.AppImage
-./Wingman_0.2.0_amd64.AppImage
+chmod +x Wingman_0.2.1_amd64.AppImage
+./Wingman_0.2.1_amd64.AppImage
 ```
 
 Use only the command appropriate to your distribution. Launch an installed package
@@ -116,7 +119,7 @@ To repeat the static checks on downloaded workflow artifacts, install the build
 prerequisites above and run from the source checkout:
 
 ```sh
-bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.0
+bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.1
 ```
 
 Only run this on trusted Wingman artifacts: AppImage inspection executes the
@@ -147,9 +150,8 @@ testing uninstall/upgrade unless testing deliberate data removal separately.
 
 `src-tauri/tauri.conf.json` is the canonical application version. Keep
 `package.json`, both root entries in `package-lock.json`, the Rust package version,
-and its `Cargo.lock` entry in agreement. This source correction aligns metadata
-with the existing **0.2.0** baseline; it does not replace the published alpha
-assets or create another release.
+and its `Cargo.lock` entry in agreement. Each release gets a new numeric package
+version; never replace the assets of an already published version.
 
 Release tags use `vMAJOR.MINOR.PATCH`, optionally followed by `-alpha`, `-beta`,
 or `-rc` and an optional numeric suffix (for example `v0.3.0-alpha.1`). The numeric
@@ -175,7 +177,8 @@ For a release:
    publish packages and checksums to a **draft** GitHub release; tags with
    prerelease suffixes retain GitHub prerelease status.
 4. Verify the draft's checksums and test the actual release artifacts before
-   manually publishing it. Workflow artifacts and the draft are separate builds,
+   publishing it with an explicit maintainer or authorized agent action.
+   Workflow artifacts and the draft are separate builds,
    so their hashes may differ. Add installation results and known limitations
    to the release notes.
 
