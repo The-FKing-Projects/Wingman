@@ -1,0 +1,115 @@
+name: Linux packages
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: stable
+      - name: Validate version and release tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ "$EVENT_NAME" == push ]]; then
+            python3 scripts/check_versions.py --tag "$TAG"
+          else
+            python3 scripts/check_versions.py
+          fi
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Install build and packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential curl wget file libxdo-dev libssl-dev libdbus-1-dev \
+            libwebkit2gtk-4.1-dev librsvg2-dev patchelf squashfs-tools \
+            desktop-file-utils rpm
+      - run: npm ci
+      - name: Build packages with locked Rust dependencies
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: npm run tauri build -- --bundles deb rpm appimage -- --locked
+      - name: Collect exact package set and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir artifacts
+          for extension in deb rpm AppImage; do
+            mapfile -d '' files < <(find src-tauri/target/release/bundle \
+              -type f -name "*.$extension" -print0)
+            if [[ ${#files[@]} != 1 ]]; then
+              echo "::error::Expected exactly one $extension package, found ${#files[@]}"
+              exit 1
+            fi
+            cp -- "${files[0]}" artifacts/
+          done
+          cd artifacts
+          sha256sum -- *.deb *.rpm *.AppImage > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wingman-linux-x86_64
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Download this run's package artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: gh run download "$RUN_ID" --name wingman-linux-x86_64 --dir artifacts
+      - name: Create a draft release without overwriting existing releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd artifacts
+          sha256sum -c SHA256SUMS
+          # Distinguish an absent release from authentication/network failures.
+          response=$(gh api --include "repos/$GH_REPO/releases/tags/$TAG" 2>&1) \
+            && { echo "::error::Release already exists; refusing to overwrite"; exit 1; }
+          if ! grep -q '^HTTP/[^ ]* 404' <<< "$response"; then
+            printf '%s\n' "$response" >&2
+            exit 1
+          fi
+          options=(--draft --verify-tag --title "$TAG" --generate-notes)
+          if [[ "$TAG" == *-* ]]; then
+            options+=(--prerelease)
+          fi
+          gh release create "$TAG" "${options[@]}" \
+            -- SHA256SUMS *.deb *.rpm *.AppImage
