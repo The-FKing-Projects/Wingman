@@ -79,7 +79,7 @@ On Ubuntu 24.04, install the native build and packaging prerequisites:
 sudo apt update
 sudo apt install build-essential curl wget file libxdo-dev libssl-dev libdbus-1-dev \
   libwebkit2gtk-4.1-dev librsvg2-dev patchelf squashfs-tools \
-  desktop-file-utils rpm
+  desktop-file-utils rpm libarchive-tools
 ```
 
 Install Node.js and Rust separately using their official installation guidance.
@@ -102,6 +102,46 @@ npm run tauri build -- --bundles deb rpm appimage -- --locked
 
 Bundles are written under `src-tauri/target/release/bundle/`. Successful builds
 do not establish installation, authentication, or graphics stability.
+
+## Package verification
+
+The packaging workflow verifies checksums, package identity/version/architecture,
+DEB/RPM GTK and WebKit dependency declarations, launcher syntax and command, icons,
+and x86_64 ELF executables inside each format. It extracts the AppImage without
+starting Wingman. It also installs and removes the DEB on the disposable Ubuntu
+24.04 runner and checks that its executable has no unresolved native libraries.
+These checks do **not** launch a graphical session or validate Microsoft login.
+
+To repeat the static checks on downloaded workflow artifacts, install the build
+prerequisites above and run from the source checkout:
+
+```sh
+bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.0
+```
+
+Only run this on trusted Wingman artifacts: AppImage inspection executes the
+artifact's extraction runtime, and DEB installation can execute package scripts.
+Checksums detect accidental corruption, not an untrusted source.
+
+RPM payload inspection uses libarchive's `bsdtar`. The generated RPM omits the
+archive-size header expected by Ubuntu 24.04's `rpm2cpio`, which can return a
+failure after writing the payload. This tool-compatibility limitation does not
+establish whether installation works on an RPM-based desktop; that still needs
+separate testing.
+
+| Environment | Evidence | Not established |
+| --- | --- | --- |
+| Ubuntu 24.04 x86_64 CI | DEB/RPM/AppImage builds; automated payload checks and DEB install/library-resolution checks | GUI startup, login, graphics stability |
+| Ubuntu 26.04.1 maintainer desktop | Installed alpha DEB launches, signs in, and loads conversations | Reliable restart sign-in and crash-free shutdown |
+| RPM-based desktops | RPM build and payload inspection only | Clean installation, GUI behavior |
+| AppImage on desktop | Build and extracted payload inspection only | FUSE availability, GUI behavior, host compatibility |
+
+For each release candidate, record its tag, SHA-256, distribution version,
+Wayland/X11 session, and native WebKitGTK/GTK versions. Check clean installation,
+application-menu entry/icon, startup, sign-in, conversation loading, normal
+close/reopen, upgrade with profile retention, and uninstall. Record failures
+explicitly and keep private account data out of reports. Retain the profile when
+testing uninstall/upgrade unless testing deliberate data removal separately.
 
 ## Versions and releases
 

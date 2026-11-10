@@ -45,7 +45,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential curl wget file libxdo-dev libssl-dev libdbus-1-dev \
             libwebkit2gtk-4.1-dev librsvg2-dev patchelf squashfs-tools \
-            desktop-file-utils rpm
+            desktop-file-utils rpm libarchive-tools
       - run: npm ci
       - name: Build packages with locked Rust dependencies
         env:
@@ -68,6 +68,27 @@ jobs:
           cd artifacts
           sha256sum -- *.deb *.rpm *.AppImage > SHA256SUMS
           sha256sum -c SHA256SUMS
+      - name: Inspect package metadata and payloads
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')
+          bash scripts/check_packages.sh artifacts "$version"
+      - name: Test package verification rejection paths
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')
+          bash scripts/test_packages.sh artifacts "$version"
+      - name: Install DEB and check native library resolution
+        run: |
+          sudo apt-get install -y ./artifacts/*.deb
+          test "$(dpkg-query -W -f='${Version}' wingman)" = \
+            "$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')"
+          desktop-file-validate /usr/share/applications/Wingman.desktop
+          ldd /usr/bin/wingman > native-libraries.txt
+          cat native-libraries.txt
+          if grep -q 'not found' native-libraries.txt; then
+            echo "::error::Installed Wingman has unresolved native libraries"
+            exit 1
+          fi
+          sudo apt-get remove -y wingman
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: wingman-linux-x86_64
