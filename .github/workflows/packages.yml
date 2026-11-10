@@ -71,7 +71,7 @@ jobs:
       - name: Inspect package metadata and payloads
         run: |
           version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')
-          bash -x scripts/check_packages.sh artifacts "$version"
+          bash scripts/check_packages.sh artifacts "$version"
       - name: Test package verification rejection paths
         run: |
           version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')

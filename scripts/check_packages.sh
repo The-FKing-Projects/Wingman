@@ -80,7 +80,8 @@ for library in libwebkit2gtk-4.1.so.0 libgtk-3.so.0; do
   [[ "$dependencies" == *"$library"* ]] || fail "RPM missing dependency $library"
 done
 mkdir "$work/rpm"
-rpm2cpio "$rpm" | (cd "$work/rpm" && cpio -idm --no-absolute-filenames --quiet)
+rpm2cpio "$rpm" > "$work/payload.cpio"
+(cd "$work/rpm" && cpio -idm --no-absolute-filenames < "$work/payload.cpio")
 check_tree "$work/rpm" "$work/rpm/usr/share/applications/Wingman.desktop" \
   "$work/rpm/usr/bin/wingman" \
   "$work/rpm/usr/share/icons/hicolor/128x128/apps/wingman.png"
