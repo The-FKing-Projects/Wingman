@@ -1,0 +1,98 @@
+name: Publish APT repository
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing published release tag (including prereleases)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wingman-aptly-stable
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Download an existing published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -c 'import sys; sys.path.insert(0, "scripts"); from check_versions import TAG; sys.exit(0 if TAG.fullmatch(sys.argv[1]) else "Invalid release tag")' "$TAG"
+          gh release view --repo "$GH_REPO" \
+            --json isDraft,publishedAt -- "$TAG" > release.json
+          python3 -c 'import json, sys; r = json.load(open("release.json")); sys.exit(0 if r["isDraft"] is False and r["publishedAt"] else "Release must already be published")'
+          gh release download --repo "$GH_REPO" --dir artifacts \
+            --pattern '*.deb' --pattern SHA256SUMS -- "$TAG"
+          python3 scripts/verify_apt_release.py artifacts "$TAG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verified-apt-package
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: prepare
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - fkingprojects
+    timeout-minutes: 15
+    steps:
+      - name: Create an isolated package directory
+        id: directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory=$(mktemp -d "$RUNNER_TEMP/wingman-apt.XXXXXXXX")
+          echo "path=$directory" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: verified-apt-package
+          path: ${{ steps.directory.outputs.path }}
+      - name: Import the DEB and update the signed publication
+        env:
+          PACKAGE_DIR: ${{ steps.directory.outputs.path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$PACKAGE_DIR"
+          sha256sum --check --strict SHA256SUMS
+          shopt -s nullglob
+          packages=(*.deb)
+          if [[ ${#packages[@]} != 1 ]]; then
+            echo "::error::Expected exactly one verified DEB"
+            exit 1
+          fi
+          aptly repo show fkingprojects
+          aptly publish show stable .
+          aptly repo add fkingprojects "$PACKAGE_DIR/${packages[0]}"
+          aptly publish update -batch stable .
+          echo "Published to https://repo.fkingprojects.org (stable/main)." >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove temporary downloads
+        if: always() && steps.directory.outputs.path != ''
+        env:
+          PACKAGE_DIR: ${{ steps.directory.outputs.path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          find "$PACKAGE_DIR" -maxdepth 1 -type f -delete
+          rmdir -- "$PACKAGE_DIR"

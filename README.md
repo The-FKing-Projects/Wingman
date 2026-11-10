@@ -187,6 +187,58 @@ failed packaging build, rerun it before a release exists. If publication partial
 failed after creating a draft, inspect that draft and its assets before taking
 manual recovery action; do not overwrite a published version.
 
+## APT repository publishing
+
+The **Publish APT repository** workflow imports the DEB from each newly published
+GitHub release into the existing APTly repository at
+<https://repo.fkingprojects.org>. **Prereleases are included**, even though the
+APT distribution is named `stable`. Draft releases, pull requests, and tag builds
+alone do not update the APT repository. The existing build, verification, and
+draft-release approval process is unchanged.
+
+A GitHub-hosted job downloads the release's DEB and `SHA256SUMS`, checks the hash
+and package name/version/architecture, and passes only the verified DEB and its
+checksum to the server. It does not rebuild or install the package. The publishing
+job does not check out repository code or execute package contents.
+
+The existing organization runner `FK04-SERVER` must be available to Wingman with
+labels `self-hosted`, `Linux`, `X64`, and `fkingprojects`. The custom label keeps
+publishing on the APT-capable organization runner. Do not allow untrusted
+workflows or pull-request jobs to use this signing-capable server.
+
+The runner's systemd service account, `github-runner`, must have `aptly`, Bash,
+and `sha256sum` on its service PATH and use the same HOME, APTly configuration,
+GnuPG home, filesystem permissions, and signing-key access as the validated
+interactive setup. Signing must work noninteractively: the workflow uses
+`-batch`, never `sudo`, never skips signing, and does not import a private key.
+There are no new repository secrets to configure. The commands are:
+
+```sh
+aptly repo add fkingprojects /path/to/verified/Wingman_VERSION_amd64.deb
+aptly publish update -batch stable .
+```
+
+This preserves the existing prefix `.`, distribution `stable`, component `main`,
+and architectures `all amd64`. It assumes the existing web server serves APTly's
+published files at the repository URL; it does not change APTly or web-server
+configuration. Workflow runs are serialized to avoid concurrent Wingman updates;
+other publishers on this server must coordinate their own APTly writes.
+
+After this workflow is on the default branch, publish a GitHub release normally,
+or run **Publish APT repository** manually in Actions with an already published
+tag (for example `v0.2.1-alpha`). Manual runs reject drafts and nonexistent
+releases. Use the same manual trigger or rerun a failed workflow to retry; imports
+do not force-replace packages with conflicting contents. If import succeeds but
+signing/publication fails, the package remains in the local APTly repository and
+the workflow fails visibly; correct signing/access before retrying.
+
+Package versions still omit prerelease suffixes, so do not publish distinct
+alpha/beta/stable builds with the same numeric version. APT cannot distinguish
+them, and conflicting contents must not be overwritten. Older package versions
+are retained; replaying an older release does not downgrade APT's newest version.
+Repository clients must already trust the repository's public signing key and
+have its `stable main` source configured; signing-key distribution is unchanged.
+
 ## Roadmap
 
 See the [milestones](https://github.com/The-FKing-Projects/Wingman/milestones):
