@@ -6,7 +6,7 @@ if [[ $# != 2 ]]; then
   exit 1
 fi
 
-for tool in dpkg-deb rpm rpm2cpio cpio readelf desktop-file-validate sha256sum; do
+for tool in dpkg-deb rpm bsdtar readelf desktop-file-validate sha256sum; do
   command -v "$tool" >/dev/null || {
     echo "Missing required package inspection tool: $tool" >&2
     exit 1
@@ -80,8 +80,7 @@ for library in libwebkit2gtk-4.1.so.0 libgtk-3.so.0; do
   [[ "$dependencies" == *"$library"* ]] || fail "RPM missing dependency $library"
 done
 mkdir "$work/rpm"
-rpm2cpio "$rpm" > "$work/payload.cpio"
-(cd "$work/rpm" && cpio -idm --no-absolute-filenames < "$work/payload.cpio")
+bsdtar -xf "$rpm" -C "$work/rpm"
 check_tree "$work/rpm" "$work/rpm/usr/share/applications/Wingman.desktop" \
   "$work/rpm/usr/bin/wingman" \
   "$work/rpm/usr/share/icons/hicolor/128x128/apps/wingman.png"

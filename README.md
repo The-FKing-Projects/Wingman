@@ -79,7 +79,7 @@ On Ubuntu 24.04, install the native build and packaging prerequisites:
 sudo apt update
 sudo apt install build-essential curl wget file libxdo-dev libssl-dev libdbus-1-dev \
   libwebkit2gtk-4.1-dev librsvg2-dev patchelf squashfs-tools \
-  desktop-file-utils rpm cpio
+  desktop-file-utils rpm libarchive-tools
 ```
 
 Install Node.js and Rust separately using their official installation guidance.
@@ -122,6 +122,12 @@ bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.0
 Only run this on trusted Wingman artifacts: AppImage inspection executes the
 artifact's extraction runtime, and DEB installation can execute package scripts.
 Checksums detect accidental corruption, not an untrusted source.
+
+RPM payload inspection uses libarchive's `bsdtar`. The generated RPM omits the
+archive-size header expected by Ubuntu 24.04's `rpm2cpio`, which can return a
+failure after writing the payload. This tool-compatibility limitation does not
+establish whether installation works on an RPM-based desktop; that still needs
+separate testing.
 
 | Environment | Evidence | Not established |
 | --- | --- | --- |
