@@ -72,7 +72,10 @@ rpm=${rpms[0]}
 require_equal "$(rpm -qp --qf '%{NAME}' "$rpm")" wingman "RPM name"
 require_equal "$(rpm -qp --qf '%{VERSION}' "$rpm")" "$version" "RPM version"
 require_equal "$(rpm -qp --qf '%{ARCH}' "$rpm")" x86_64 "RPM architecture"
-dependencies=$(rpm -qp --requires "$rpm")
+if ! dependencies=$(rpm -qp --requires "$rpm"); then
+  printf '%s\n' "$dependencies" >&2
+  fail "Could not read RPM dependencies"
+fi
 for library in libwebkit2gtk-4.1.so.0 libgtk-3.so.0; do
   [[ "$dependencies" == *"$library"* ]] || fail "RPM missing dependency $library"
 done
