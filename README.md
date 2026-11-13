@@ -71,8 +71,9 @@ failure.
   reproduced. The window can close normally while its child process dumps core.
   No rendering workaround is enabled by default; see
   [#5](https://github.com/The-FKing-Projects/Wingman/issues/5).
-- Window-state restoration, a native About surface, custom branding,
-  notifications, and tray integration are not implemented. External-link,
+- Released 0.2.1 packages still use starter icons; the Wingman icon set is
+  on `main` for the next release. Window-state restoration, a native About
+  surface, notifications, and tray integration are not implemented. External-link,
   popup, and offline-recovery behavior still needs characterization.
 
 When reporting a problem, include the package/version, distribution, desktop
