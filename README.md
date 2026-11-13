@@ -19,8 +19,15 @@ is an early testing release, not a stable release.
 This patch release adds automated builds and package verification, not changes to
 the application's browsing or authentication behavior. The previous 0.2.0 DEB
 was tested by the maintainer on Ubuntu 26.04.1; 0.2.1 has automated DEB installation
-and native-library checks on Ubuntu 24.04. RPM and AppImage payloads are inspected,
-but their installation and desktop runtime behavior have not yet been verified.
+and native-library checks on Ubuntu 24.04. RPM and AppImage payloads are inspected.
+The published 0.2.1 RPM also passed installation, native-library resolution, and
+removal checks in a disposable Fedora 44 container; desktop runtime behavior
+was also smoke-tested in a Fedora 45 GNOME/Wayland QEMU VM, including a test
+conversation and retained login after app restart, with no crashes reported.
+The same RPM installed and launched in an openSUSE Leap 16.1 KDE/Wayland QEMU VM,
+where login also survived close/reopen; zypper required an exception for the
+unsigned package.
+AppImage desktop runtime behavior remains unverified.
 There is not yet a tested cross-distribution support matrix. Packages depend on
 their host's native libraries; an AppImage does not guarantee compatibility with
 every Linux distribution or graphics driver.
@@ -34,7 +41,7 @@ alpha assets:
 # Debian/Ubuntu: run from the download directory.
 sudo apt install ./Wingman_0.2.1_amd64.deb
 
-# Fedora/RPM systems: available, but not yet runtime-verified.
+# Fedora/RPM systems: smoke-tested in a Fedora 45 GNOME/Wayland VM.
 sudo dnf install ./Wingman-0.2.1-1.x86_64.rpm
 
 # AppImage: available, but not yet runtime-verified.
@@ -53,7 +60,9 @@ failure.
 
 - **Restart sign-in:** Copilot may request sign-in after the app restarts.
   Persistent cookies and storage do not prove that Microsoft accepts a saved
-  session. The cause remains under investigation in
+  session. Login survived app restarts in the Fedora 45 and openSUSE Leap 16.1
+  VM smoke tests, but not on the tested Ubuntu 26.04.1 host. The cause remains
+  under investigation in
   [#8](https://github.com/The-FKing-Projects/Wingman/issues/8).
 - **Shutdown crashes:** a WebKit child process has aborted with allocator
   corruption during exit. A separate graphics-cleanup crash has also been
@@ -135,9 +144,21 @@ separate testing.
 | Environment | Evidence | Not established |
 | --- | --- | --- |
 | Ubuntu 24.04 x86_64 CI | DEB/RPM/AppImage builds; automated payload checks and DEB install/library-resolution checks | GUI startup, login, graphics stability |
-| Ubuntu 26.04.1 maintainer desktop | Installed alpha DEB launches, signs in, and loads conversations | Reliable restart sign-in and crash-free shutdown |
-| RPM-based desktops | RPM build and payload inspection only | Clean installation, GUI behavior |
+| Ubuntu 26.04.1 x86_64 / Wayland, v0.2.0 DEB (prior maintainer test) | Installed DEB launches, signs in, and loads conversations | Reliable restart sign-in and crash-free shutdown |
+| Ubuntu 26.04.1 x86_64 / Wayland, v0.2.1 DEB (current installed package) | Installed executable matches the published DEB payload; maintainer reports normal visible open/close, but a WebKit child aborts after close and sign-in is required again on restart; WebKitGTK 2.52.6, GTK 3.24.52, GLib 2.88.0 | Crash-free shutdown and restart sign-in fail; upgrade/profile retention and conversation-loading acceptance remain unverified |
+| Fedora 44 x86_64 container, published v0.2.1 RPM | Checksum, DNF installation, RPM file integrity, native-library resolution, launcher/icon presence, and package removal pass; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.88.4 | No GUI launched; desktop integration, login, rendering, close/reopen, upgrade/profile retention, and shutdown behavior |
+| Fedora 45 x86_64 QEMU VM, GNOME / Wayland, published v0.2.1 RPM | Release SHA-256 matches; DNF installation, startup, test conversation, and retained login after app restart reported successful; no crashes reported; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.90.1 | Child-core accounting, long-session stability, launcher/icon appearance, existing-conversation loading, upgrade/profile retention, and uninstall |
+| openSUSE Leap 16.1 x86_64 QEMU VM, KDE / Wayland, published v0.2.1 RPM | Release SHA-256 matches; zypper dependency resolution and installation succeeded after accepting the unsigned-package warning; startup and retained login after close/reopen reported successful; WebKitGTK 2.54.1, GTK 3.24.52, GLib 2.84.4 | Package signature verification, child-core accounting, long-session stability, launcher/icon appearance, conversation-loading acceptance, upgrade/profile retention, and uninstall |
 | AppImage on desktop | Build and extracted payload inspection only | FUSE availability, GUI behavior, host compatibility |
+
+A single maintainer-controlled v0.2.1 launch with
+`WEBKIT_DISABLE_DMABUF_RENDERER=1` rendered and worked normally, then closed
+without a reported error or a recorded WebKit child core in the observation
+interval. A follow-up batch of three baseline and three override launches also
+produced no reported crashes or recorded WebKit child cores; the first baseline
+was interrupted with Ctrl+C and is not a normal-close result. These short trials
+do not establish a renderer-specific improvement or a verified fix; shutdown
+failures are intermittent and the default rendering policy remains unchanged.
 
 For each release candidate, record its tag, SHA-256, distribution version,
 Wayland/X11 session, and native WebKitGTK/GTK versions. Check clean installation,
