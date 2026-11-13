@@ -1,7 +1,7 @@
 {
   "name": "wingman",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
-		"vite": "^8.0.16",
+    "vite": "^8.0.16",
     "typescript": "~6.0.3"
   }
 }

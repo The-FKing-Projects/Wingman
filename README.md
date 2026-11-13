@@ -7,7 +7,7 @@ An internet connection is required.
 
 ## Current release
 
-[v0.2.1-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.1-alpha)
+[v0.2.2-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.2-alpha)
 is an early testing release, not a stable release.
 
 - Native single-window application and desktop launcher.
@@ -16,8 +16,12 @@ is an early testing release, not a stable release.
 - Browser data is stored on disk, but reliable sign-in across restarts is **not**
   established.
 
-This patch release adds automated builds and package verification, not changes to
-the application's browsing or authentication behavior. The previous 0.2.0 DEB
+0.2.2 replaces the Tauri starter icons with the Wingman echelon icon and adds a
+64x64 launcher size. Application behavior is otherwise unchanged from 0.2.1, so
+the 0.2.1 test results below still describe the runtime.
+
+The 0.2.1 patch release added automated builds and package verification, not
+changes to the application's browsing or authentication behavior. The previous 0.2.0 DEB
 was tested by the maintainer on Ubuntu 26.04.1; 0.2.1 has automated DEB installation
 and native-library checks on Ubuntu 24.04. RPM and AppImage payloads are inspected.
 The published 0.2.1 RPM also passed installation, native-library resolution, and
@@ -41,14 +45,14 @@ alpha assets:
 
 ```sh
 # Debian/Ubuntu: run from the download directory.
-sudo apt install ./Wingman_0.2.1_amd64.deb
+sudo apt install ./Wingman_0.2.2_amd64.deb
 
 # Fedora/RPM systems: smoke-tested in a Fedora 45 GNOME/Wayland VM.
-sudo dnf install ./Wingman-0.2.1-1.x86_64.rpm
+sudo dnf install ./Wingman-0.2.2-1.x86_64.rpm
 
 # AppImage: launches on Ubuntu 26.04.1; see known issues below.
-chmod +x Wingman_0.2.1_amd64.AppImage
-./Wingman_0.2.1_amd64.AppImage
+chmod +x Wingman_0.2.2_amd64.AppImage
+./Wingman_0.2.2_amd64.AppImage
 ```
 
 Use only the command appropriate to your distribution. Launch an installed package
@@ -71,10 +75,9 @@ failure.
   reproduced. The window can close normally while its child process dumps core.
   No rendering workaround is enabled by default; see
   [#5](https://github.com/The-FKing-Projects/Wingman/issues/5).
-- Released 0.2.1 packages still use starter icons; the Wingman icon set is
-  on `main` for the next release. Window-state restoration, a native About
-  surface, notifications, and tray integration are not implemented. External-link,
-  popup, and offline-recovery behavior still needs characterization.
+- Window-state restoration, a native About surface, notifications, and tray
+  integration are not implemented. External-link, popup, and offline-recovery
+  behavior still needs characterization.
 
 When reporting a problem, include the package/version, distribution, desktop
 session (Wayland/X11), native dependency versions, and reproduction steps.
@@ -131,7 +134,7 @@ To repeat the static checks on downloaded workflow artifacts, install the build
 prerequisites above and run from the source checkout:
 
 ```sh
-bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.1
+bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.2
 ```
 
 Only run this on trusted Wingman artifacts: AppImage inspection executes the
