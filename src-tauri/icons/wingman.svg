@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Wingman</title>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="#143A52"/>
+  <path transform="translate(388 410) scale(0.9)" fill="#F4F1EA" d="M0 -300 L34 -200 L40 -60 L280 170 L280 205 L48 110 L44 210 L140 280 L140 310 L30 290 L0 300 L-30 290 L-140 310 L-140 280 L-44 210 L-48 110 L-280 205 L-280 170 L-40 -60 L-34 -200 Z"/>
+  <path transform="translate(690 650) scale(0.68)" fill="#F2A33A" d="M0 -300 L34 -200 L40 -60 L280 170 L280 205 L48 110 L44 210 L140 280 L140 310 L30 290 L0 300 L-30 290 L-140 310 L-140 280 L-44 210 L-48 110 L-280 205 L-280 170 L-40 -60 L-34 -200 Z"/>
+</svg>
