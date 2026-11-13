@@ -1,6 +1,6 @@
 [package]
 name = "wingman"
-version = "0.2.1"
+version = "0.2.2"
 description = "A native Linux desktop wrapper for Microsoft Copilot."
 authors = ["Wingman contributors"]
 edition = "2024"
