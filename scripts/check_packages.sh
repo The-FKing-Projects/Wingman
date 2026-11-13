@@ -34,6 +34,7 @@ check_tree() {
   grep -qx 'Name=Wingman' "$desktop" || fail "Incorrect launcher name"
   grep -qx 'Exec=wingman' "$desktop" || fail "Unexpected launcher command"
   grep -qx 'Icon=wingman' "$desktop" || fail "Incorrect launcher icon"
+  grep -qx 'StartupWMClass=Wingman' "$desktop" || fail "Launcher does not match the window class"
   [[ -s "$icon" ]] || fail "Missing launcher icon in $root"
   [[ -f "$binary" && -x "$binary" ]] || fail "Missing executable in $root"
   readelf -h "$binary" | grep -q 'Class:.*ELF64' || fail "Non-64-bit executable"

@@ -3,6 +3,11 @@ use url::Url;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // GTK derives the Wayland app_id and X11 WM_CLASS from the program name;
+    // it must match the bundled Wingman.desktop for taskbar and title-bar icons.
+    #[cfg(target_os = "linux")]
+    glib::set_prgname(Some("Wingman"));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
