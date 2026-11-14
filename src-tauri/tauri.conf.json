@@ -45,6 +45,9 @@
       },
       "rpm": {
         "desktopTemplate": "wingman.desktop"
+      },
+      "appimage": {
+        "bundleMediaFramework": true
       }
     }
   }

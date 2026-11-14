@@ -45,7 +45,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential curl wget file libxdo-dev libssl-dev libdbus-1-dev \
             libwebkit2gtk-4.1-dev librsvg2-dev patchelf squashfs-tools \
-            desktop-file-utils rpm libarchive-tools
+            desktop-file-utils rpm libarchive-tools \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good
       - run: npm ci
       - name: Build packages with locked Rust dependencies
         env:
