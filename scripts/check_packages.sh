@@ -95,5 +95,8 @@ chmod +x "$image"
 check_tree "$work/squashfs-root" "$work/squashfs-root/Wingman.desktop" \
   "$work/squashfs-root/usr/bin/wingman" "$work/squashfs-root/Wingman.png"
 [[ -x "$work/squashfs-root/AppRun" ]] || fail "Missing AppImage entry point"
-echo "AppImage entry point, launcher, icon, and ELF architecture verified"
+# WebKit media playback needs appsink, which lives in the bundled app plugin.
+[[ -f "$work/squashfs-root/usr/lib/gstreamer-1.0/libgstapp.so" ]] ||
+  fail "AppImage is missing bundled GStreamer plugins"
+echo "AppImage entry point, launcher, icon, GStreamer plugins, and ELF architecture verified"
 echo "Static package checks passed; installation and GUI behavior require separate testing"
