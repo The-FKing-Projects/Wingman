@@ -1,4 +1,8 @@
-# Wingman
+<p align="center">
+  <img src="src-tauri/icons/128x128@2x.png" width="128" height="128" alt="Wingman icon: two swept-wing aircraft in echelon formation">
+</p>
+
+<h1 align="center">Wingman</h1>
 
 Wingman is a lightweight Linux desktop wrapper for Microsoft Copilot, built with
 Tauri v2 and the system WebKitGTK browser engine. A single native window loads
@@ -7,7 +11,7 @@ An internet connection is required.
 
 ## Current release
 
-[v0.2.2-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.2-alpha)
+[v0.2.3-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.3-alpha)
 is an early testing release, not a stable release.
 
 - Native single-window application and desktop launcher.
@@ -16,9 +20,13 @@ is an early testing release, not a stable release.
 - Browser data is stored on disk, but reliable sign-in across restarts is **not**
   established.
 
-0.2.2 replaces the Tauri starter icons with the Wingman echelon icon and adds a
-64x64 launcher size. Application behavior is otherwise unchanged from 0.2.1, so
-the 0.2.1 test results below still describe the runtime.
+0.2.2 replaced the Tauri starter icons with the Wingman echelon icon. 0.2.3
+makes the window's Wayland app ID and X11 class match `Wingman.desktop`, so KDE
+Plasma shows the icon in the taskbar and title bar as well as the application
+menu. Application behavior is otherwise unchanged from 0.2.1, so the 0.2.1 test
+results below still describe the runtime. After upgrading, Plasma may keep a
+generic taskbar icon until its cache refreshes; restarting the panel with
+`systemctl --user restart plasma-plasmashell` or logging out fixes it.
 
 The 0.2.1 patch release added automated builds and package verification, not
 changes to the application's browsing or authentication behavior. The previous 0.2.0 DEB
@@ -45,14 +53,14 @@ alpha assets:
 
 ```sh
 # Debian/Ubuntu: run from the download directory.
-sudo apt install ./Wingman_0.2.2_amd64.deb
+sudo apt install ./Wingman_0.2.3_amd64.deb
 
 # Fedora/RPM systems: smoke-tested in a Fedora 45 GNOME/Wayland VM.
-sudo dnf install ./Wingman-0.2.2-1.x86_64.rpm
+sudo dnf install ./Wingman-0.2.3-1.x86_64.rpm
 
 # AppImage: launches on Ubuntu 26.04.1; see known issues below.
-chmod +x Wingman_0.2.2_amd64.AppImage
-./Wingman_0.2.2_amd64.AppImage
+chmod +x Wingman_0.2.3_amd64.AppImage
+./Wingman_0.2.3_amd64.AppImage
 ```
 
 Use only the command appropriate to your distribution. Launch an installed package
@@ -134,7 +142,7 @@ To repeat the static checks on downloaded workflow artifacts, install the build
 prerequisites above and run from the source checkout:
 
 ```sh
-bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.2
+bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.3
 ```
 
 Only run this on trusted Wingman artifacts: AppImage inspection executes the
