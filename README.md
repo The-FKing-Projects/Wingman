@@ -40,8 +40,9 @@ The same RPM installed and launched in an openSUSE Leap 16.1 KDE/Wayland QEMU VM
 where login also survived close/reopen; zypper required an exception for the
 unsigned package.
 The AppImage launched and signed in on the Ubuntu 26.04.1 host, but showed the
-same shutdown crash and restart sign-in failure as the DEB there and reports a
-missing GStreamer `appsink` element.
+same shutdown crash and restart sign-in failure as the DEB there. The v0.2.3 and
+earlier AppImages report a missing GStreamer `appsink` element; later builds
+bundle the GStreamer base and good plugins.
 There is not yet a tested cross-distribution support matrix. Packages depend on
 their host's native libraries; an AppImage does not guarantee compatibility with
 every Linux distribution or graphics driver.
@@ -163,7 +164,7 @@ separate testing.
 | Fedora 44 x86_64 container, published v0.2.1 RPM | Checksum, DNF installation, RPM file integrity, native-library resolution, launcher/icon presence, and package removal pass; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.88.4 | No GUI launched; desktop integration, login, rendering, close/reopen, upgrade/profile retention, and shutdown behavior |
 | Fedora 45 x86_64 QEMU VM, GNOME / Wayland, published v0.2.1 RPM | Release SHA-256 matches; DNF installation, startup, test conversation, and retained login after app restart reported successful; no crashes reported; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.90.1 | Child-core accounting, long-session stability, launcher/icon appearance, existing-conversation loading, upgrade/profile retention, and uninstall |
 | openSUSE Leap 16.1 x86_64 QEMU VM, KDE / Wayland, published v0.2.1 RPM | Release SHA-256 matches; zypper dependency resolution and installation succeeded after accepting the unsigned-package warning; startup and retained login after close/reopen reported successful; WebKitGTK 2.54.1, GTK 3.24.52, GLib 2.84.4 | Package signature verification, child-core accounting, long-session stability, launcher/icon appearance, conversation-loading acceptance, upgrade/profile retention, and uninstall |
-| Ubuntu 26.04.1 x86_64 / Wayland, published v0.2.1 AppImage | Release SHA-256 matches; FUSE startup, sign-in, and Copilot use reported successful | Background WebKit child abort after closing a longer session; sign-in not retained (shares the DEB's profile); GStreamer `appsink` missing; desktop-entry integration and other hosts untested |
+| Ubuntu 26.04.1 x86_64 / Wayland, published v0.2.1 AppImage | Release SHA-256 matches; FUSE startup, sign-in, and Copilot use reported successful | Background WebKit child abort after closing a longer session; sign-in not retained (shares the DEB's profile); GStreamer `appsink` missing (fixed in later builds); desktop-entry integration and other hosts untested |
 
 A single maintainer-controlled v0.2.1 launch with
 `WEBKIT_DISABLE_DMABUF_RENDERER=1` rendered and worked normally, then closed
