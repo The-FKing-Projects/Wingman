@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use url::Url;
@@ -21,11 +21,18 @@ fn offline_page(failing_uri: &str) -> String {
     include_str!("offline.html").replace("{{RETRY_URL}}", &escape_html(&url))
 }
 
-/// WebKitWebView `load-changed` tracks the main-frame page load. Only show Retry
-/// while that main-frame navigation is in progress, so same-URI iframe failures
-/// after Copilot has loaded cannot replace the window.
-fn should_show_retry(main_frame_loading: bool) -> bool {
+/// WebKitWebView has no is-main-frame flag on load-failed. Require both:
+/// 1. a main-frame page load is in progress (`load-changed` Started..Finished)
+/// 2. the failing URI matches that main-frame navigation URI
+/// so iframe failures during or after Copilot load cannot replace the window.
+fn should_show_retry(
+    main_frame_loading: bool,
+    failing_uri: &str,
+    main_navigation_uri: &str,
+) -> bool {
     main_frame_loading
+        && !main_navigation_uri.is_empty()
+        && failing_uri == main_navigation_uri
 }
 
 #[cfg(target_os = "linux")]
@@ -47,11 +54,20 @@ pub fn attach(window: &tauri::WebviewWindow, start: Url) -> tauri::Result<()> {
     window.with_webview(move |platform| {
         let webview = platform.inner();
         let main_frame_loading = Rc::new(Cell::new(false));
+        let main_navigation_uri = Rc::new(RefCell::new(String::new()));
 
         webview.connect_load_changed({
             let main_frame_loading = main_frame_loading.clone();
-            move |_, event| match event {
-                LoadEvent::Started => main_frame_loading.set(true),
+            let main_navigation_uri = main_navigation_uri.clone();
+            move |webview, event| match event {
+                LoadEvent::Started | LoadEvent::Redirected => {
+                    if matches!(event, LoadEvent::Started) {
+                        main_frame_loading.set(true);
+                    }
+                    if let Some(uri) = webview.uri() {
+                        *main_navigation_uri.borrow_mut() = uri.to_string();
+                    }
+                }
                 LoadEvent::Finished => main_frame_loading.set(false),
                 _ => {}
             }
@@ -59,13 +75,18 @@ pub fn attach(window: &tauri::WebviewWindow, start: Url) -> tauri::Result<()> {
 
         webview.connect_load_failed({
             let main_frame_loading = main_frame_loading.clone();
+            let main_navigation_uri = main_navigation_uri.clone();
             move |webview, _, uri, error| {
                 if error.matches(NetworkError::Cancelled)
                     || error.matches(PolicyError::FrameLoadInterruptedByPolicyChange)
                 {
                     return false;
                 }
-                if !should_show_retry(main_frame_loading.get()) {
+                if !should_show_retry(
+                    main_frame_loading.get(),
+                    uri,
+                    &main_navigation_uri.borrow(),
+                ) {
                     return false;
                 }
                 main_frame_loading.set(false);
@@ -75,8 +96,13 @@ pub fn attach(window: &tauri::WebviewWindow, start: Url) -> tauri::Result<()> {
         });
         webview.connect_load_failed_with_tls_errors({
             let main_frame_loading = main_frame_loading.clone();
+            let main_navigation_uri = main_navigation_uri.clone();
             move |webview, uri, _, _| {
-                if !should_show_retry(main_frame_loading.get()) {
+                if !should_show_retry(
+                    main_frame_loading.get(),
+                    uri,
+                    &main_navigation_uri.borrow(),
+                ) {
                     return false;
                 }
                 main_frame_loading.set(false);
@@ -108,8 +134,11 @@ mod tests {
     }
 
     #[test]
-    fn retry_only_while_main_frame_loading() {
-        assert!(should_show_retry(true));
-        assert!(!should_show_retry(false));
+    fn retry_requires_main_frame_load_and_matching_uri() {
+        let main = "https://copilot.com/chat";
+        assert!(should_show_retry(true, main, main));
+        assert!(!should_show_retry(false, main, main));
+        assert!(!should_show_retry(true, "https://ads.example/iframe", main));
+        assert!(!should_show_retry(true, main, ""));
     }
 }
