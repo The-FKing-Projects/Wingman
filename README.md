@@ -158,9 +158,12 @@ To repeat the Fedora container RPM install checks (package-level only):
 docker run --rm \
   -v /path/to/downloaded/artifacts:/artifacts:ro \
   -v "$PWD/scripts/install_rpm_fedora.sh:/install_rpm_fedora.sh:ro" \
-  registry.fedoraproject.org/fedora:44 \
+  registry.fedoraproject.org/fedora@sha256:8d2d82ab11e614324c42bc1e17322ea7829a8f48faea97645d2fa80d5f56f658 \
   bash /install_rpm_fedora.sh /artifacts 0.2.4
 ```
+
+Use the same image digest as `.github/workflows/packages.yml` so a later
+`fedora:44` tag refresh does not change dependency versions under your feet.
 
 Only run this on trusted Wingman artifacts: AppImage inspection executes the
 artifact's extraction runtime, and DEB/RPM installation can execute package scripts.
