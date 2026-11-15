@@ -13,6 +13,9 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
+        "create": false,
+        "url": "https://copilot.com/chat",
         "title": "Wingman",
         "width": 1400,
         "height": 900,

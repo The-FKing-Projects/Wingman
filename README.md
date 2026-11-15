@@ -86,8 +86,10 @@ failure.
   No rendering workaround is enabled by default; see
   [#5](https://github.com/The-FKing-Projects/Wingman/issues/5).
 - Window-state restoration, a native About surface, notifications, and tray
-  integration are not implemented. External-link, popup, and offline-recovery
-  behavior still needs characterization.
+  integration are not implemented. External-link and popup behavior still
+  needs characterization. Development builds show a local Retry page when a
+  top-level navigation fails; this is not yet included in the published 0.2.4
+  release and does not detect failures within an already-loaded page.
 
 When reporting a problem, include the package/version, distribution, desktop
 session (Wayland/X11), native dependency versions, and reproduction steps.

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can't reach Copilot – Wingman</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #F4F1EA;
+    --fg: #143A52;
+    --muted: #4C6475;
+    --accent: #F2A33A;
+    --accent-fg: #1B1B1B;
+    font-family: system-ui, "Cantarell", "Noto Sans", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0E2333;
+      --fg: #F4F1EA;
+      --muted: #A9B8C3;
+    }
+  }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  main {
+    max-width: 30rem;
+    padding: 2rem;
+    text-align: center;
+  }
+  svg { width: 72px; height: 72px; }
+  h1 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  p { margin: 0; line-height: 1.5; color: var(--muted); }
+  a {
+    display: inline-block;
+    margin-top: 1.75rem;
+    padding: 0.6rem 1.6rem;
+    border: 0;
+    border-radius: 0.5rem;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  a:hover { filter: brightness(1.06); }
+  a:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="64 64 896 896" aria-hidden="true">
+    <rect x="64" y="64" width="896" height="896" rx="208" fill="#143A52"/>
+    <path transform="translate(388 410) scale(0.9)" fill="#F4F1EA" d="M0 -300 L34 -200 L40 -60 L280 170 L280 205 L48 110 L44 210 L140 280 L140 310 L30 290 L0 300 L-30 290 L-140 310 L-140 280 L-44 210 L-48 110 L-280 205 L-280 170 L-40 -60 L-34 -200 Z"/>
+    <path transform="translate(690 650) scale(0.68)" fill="#F2A33A" d="M0 -300 L34 -200 L40 -60 L280 170 L280 205 L48 110 L44 210 L140 280 L140 310 L30 290 L0 300 L-30 290 L-140 310 L-140 280 L-44 210 L-48 110 L-280 205 L-280 170 L-40 -60 L-34 -200 Z"/>
+  </svg>
+  <h1>Can't reach Copilot</h1>
+  <p>Check your connection, then try again.</p>
+  <a href="{{RETRY_URL}}">Retry</a>
+</main>
+</body>
+</html>
