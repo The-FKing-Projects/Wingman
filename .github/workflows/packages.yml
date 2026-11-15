@@ -97,9 +97,38 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # Package-level only: mirrors maintainer Fedora 44 container evidence for #12.
+  # Does not launch a GUI or establish desktop/runtime support.
+  fedora-rpm-install:
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: wingman-linux-x86_64
+          path: artifacts
+      - name: Install RPM in Fedora 44 container
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(python3 -c 'import json; print(json.load(open("src-tauri/tauri.conf.json"))["version"])')
+          # SHA256SUMS lists bare filenames; verify from the artifact directory.
+          (cd artifacts && sha256sum -c SHA256SUMS)
+          # Pin the Fedora 44 image used for the #12 package-level RPM evidence.
+          image='registry.fedoraproject.org/fedora@sha256:8d2d82ab11e614324c42bc1e17322ea7829a8f48faea97645d2fa80d5f56f658'
+          docker run --rm \
+            --volume "$PWD/artifacts:/artifacts:ro" \
+            --volume "$PWD/scripts/install_rpm_fedora.sh:/install_rpm_fedora.sh:ro" \
+            "$image" \
+            bash /install_rpm_fedora.sh /artifacts "$version"
+
   release:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs: package
+    needs: [package, fedora-rpm-install]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
