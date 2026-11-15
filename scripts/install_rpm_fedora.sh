@@ -71,6 +71,7 @@ dnf -y remove wingman
 rpm -q wingman >/dev/null 2>&1 && fail "wingman still installed after dnf remove"
 [[ ! -e "$binary" ]] || fail "Binary remained after package removal: $binary"
 [[ ! -e "$desktop" ]] || fail "Desktop entry remained after package removal: $desktop"
+[[ ! -e "$icon" ]] || fail "Launcher icon remained after package removal: $icon"
 
 echo "Fedora RPM install, integrity, launcher/icon, native libraries, and removal checks passed"
 echo "No graphical session was launched; desktop runtime behavior is not established"
