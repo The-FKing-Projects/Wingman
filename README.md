@@ -140,33 +140,46 @@ DEB/RPM GTK and WebKit dependency declarations, launcher syntax and command, ico
 and x86_64 ELF executables inside each format. It extracts the AppImage without
 starting Wingman. It also installs and removes the DEB on the disposable Ubuntu
 24.04 runner and checks that its executable has no unresolved native libraries.
-These checks do **not** launch a graphical session or validate Microsoft login.
+A follow-on job installs the built RPM in a disposable Fedora 44 container, runs
+`rpm -V`, checks launcher/icon files and native-library resolution, then removes
+the package. These checks do **not** launch a graphical session or validate
+Microsoft login, and they do not establish Fedora desktop support.
 
 To repeat the static checks on downloaded workflow artifacts, install the build
 prerequisites above and run from the source checkout:
 
 ```sh
-bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.3
+bash scripts/check_packages.sh /path/to/downloaded/artifacts 0.2.4
+```
+
+To repeat the Fedora container RPM install checks (package-level only):
+
+```sh
+docker run --rm \
+  -v /path/to/downloaded/artifacts:/artifacts:ro \
+  -v "$PWD/scripts/install_rpm_fedora.sh:/install_rpm_fedora.sh:ro" \
+  registry.fedoraproject.org/fedora:44 \
+  bash /install_rpm_fedora.sh /artifacts 0.2.4
 ```
 
 Only run this on trusted Wingman artifacts: AppImage inspection executes the
-artifact's extraction runtime, and DEB installation can execute package scripts.
+artifact's extraction runtime, and DEB/RPM installation can execute package scripts.
 Checksums detect accidental corruption, not an untrusted source.
 
-RPM payload inspection uses libarchive's `bsdtar`. The generated RPM omits the
-archive-size header expected by Ubuntu 24.04's `rpm2cpio`, which can return a
-failure after writing the payload. This tool-compatibility limitation does not
-establish whether installation works on an RPM-based desktop; that still needs
-separate testing.
+RPM payload inspection on Ubuntu uses libarchive's `bsdtar`. The generated RPM
+omits the archive-size header expected by Ubuntu 24.04's `rpm2cpio`, which can
+return a failure after writing the payload. That host-tool limitation is why CI
+installs the RPM inside Fedora instead. Container install still does not
+establish RPM-based desktop runtime behavior.
 
 | Environment | Evidence | Not established |
 | --- | --- | --- |
-| Ubuntu 24.04 x86_64 CI | DEB/RPM/AppImage builds; automated payload checks and DEB install/library-resolution checks | GUI startup, login, graphics stability |
+| Ubuntu 24.04 x86_64 CI | DEB/RPM/AppImage builds; automated payload checks; DEB install/library-resolution checks; Fedora 44 container RPM install/`rpm -V`/ldd/remove via `scripts/install_rpm_fedora.sh` | GUI startup, login, graphics stability; Fedora desktop runtime |
 | Ubuntu 26.04.1 x86_64 / Wayland, v0.2.0 DEB (prior maintainer test) | Installed DEB launches, signs in, and loads conversations | Reliable restart sign-in and crash-free shutdown |
 | Ubuntu 26.04.1 x86_64 / Wayland, v0.2.1 DEB | Installed executable matches the published DEB payload; maintainer reports normal visible open/close, but a WebKit child aborts after close and sign-in is required again on restart; WebKitGTK 2.52.6, GTK 3.24.52, GLib 2.88.0 | Crash-free shutdown and restart sign-in fail; upgrade/profile retention and conversation-loading acceptance remain unverified |
 | Ubuntu 26.04.1 x86_64 / Wayland, published v0.2.4 DEB (installed package) | Artifact `Wingman_0.2.4_amd64.deb`, SHA-256 `010cc754dd5148800bce8b571fe3956847d2176812cd6f9e1ab5c2bbed3444d6` (release `SHA256SUMS`); installed `/usr/bin/wingman` matches that DEB payload byte-for-byte; desktop entry and icon present; `ldd` reports no unresolved libraries; WebKitGTK 2.52.6, GTK 3.24.52, GLib 2.88.0 | GUI launch not re-run against the daily profile in the 0.2.4 checklist pass; sign-in, conversation loading, close/reopen, upgrade/profile retention, uninstall, and shutdown behavior |
 | Fedora 44 x86_64 container, published v0.2.1 RPM | Checksum, DNF installation, RPM file integrity, native-library resolution, launcher/icon presence, and package removal pass; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.88.4 | No GUI launched; desktop integration, login, rendering, close/reopen, upgrade/profile retention, and shutdown behavior |
-| Fedora 44 x86_64 container, published v0.2.4 RPM | Artifact `Wingman-0.2.4-1.x86_64.rpm`, SHA-256 `38dbc5e4abcbfbde566c83dcf0b66cb3facb848b1506c0c9e67b9d3362da64ff` (release `SHA256SUMS`); DNF installation, `rpm -V`, native-library resolution, launcher/icon presence, and package removal pass; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.88.4 | No GUI launched; Fedora/Leap desktop runtime, login, rendering, close/reopen, upgrade/profile retention, and shutdown behavior |
+| Fedora 44 x86_64 container, published v0.2.4 RPM (manual) and CI-built RPM (automated) | Artifact `Wingman-0.2.4-1.x86_64.rpm`, SHA-256 `38dbc5e4abcbfbde566c83dcf0b66cb3facb848b1506c0c9e67b9d3362da64ff` (release `SHA256SUMS`); DNF installation, `rpm -V`, native-library resolution, launcher/icon presence, and package removal pass; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.88.4 | No GUI launched; Fedora/Leap desktop runtime, login, rendering, close/reopen, upgrade/profile retention, and shutdown behavior |
 | Fedora 45 x86_64 QEMU VM, GNOME / Wayland, published v0.2.1 RPM | Release SHA-256 matches; DNF installation, startup, test conversation, and retained login after app restart reported successful; no crashes reported; WebKitGTK 2.54.2, GTK 3.24.52, GLib 2.90.1 | Child-core accounting, long-session stability, launcher/icon appearance, existing-conversation loading, upgrade/profile retention, and uninstall; 0.2.4 not re-tested on this desktop |
 | openSUSE Leap 16.1 x86_64 QEMU VM, KDE / Wayland, published v0.2.1 RPM | Release SHA-256 matches; zypper dependency resolution and installation succeeded after accepting the unsigned-package warning; startup and retained login after close/reopen reported successful; WebKitGTK 2.54.1, GTK 3.24.52, GLib 2.84.4 | Package signature verification, child-core accounting, long-session stability, launcher/icon appearance, conversation-loading acceptance, upgrade/profile retention, and uninstall; 0.2.4 not re-tested on this desktop |
 | Ubuntu 26.04.1 x86_64 / Wayland, published v0.2.1 AppImage | Release SHA-256 matches; FUSE startup, sign-in, and Copilot use reported successful | Background WebKit child abort after closing a longer session; sign-in not retained (shares the DEB's profile); GStreamer `appsink` missing (fixed in later builds); desktop-entry integration and other hosts untested |
