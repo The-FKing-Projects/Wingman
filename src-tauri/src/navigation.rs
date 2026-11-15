@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use url::Url;
 
 const START_URL: &str = "https://copilot.com/chat";
@@ -18,6 +21,12 @@ fn offline_page(failing_uri: &str) -> String {
     include_str!("offline.html").replace("{{RETRY_URL}}", &escape_html(&url))
 }
 
+/// `load-failed` can fire for subframe loads. Only treat a failure as top-level when
+/// the failing URI matches the main-frame navigation tracked via `load-changed`.
+fn is_top_level_failure(failing_uri: &str, main_navigation_uri: &str) -> bool {
+    !main_navigation_uri.is_empty() && failing_uri == main_navigation_uri
+}
+
 #[cfg(target_os = "linux")]
 fn show_retry_page(webview: &webkit2gtk::WebView, failing_uri: &str) {
     use webkit2gtk::WebViewExt;
@@ -32,22 +41,47 @@ fn show_retry_page(webview: &webkit2gtk::WebView, failing_uri: &str) {
 
 #[cfg(target_os = "linux")]
 pub fn attach(window: &tauri::WebviewWindow, start: Url) -> tauri::Result<()> {
-    use webkit2gtk::{NetworkError, PolicyError, WebViewExt};
+    use webkit2gtk::{LoadEvent, NetworkError, PolicyError, WebViewExt};
 
     window.with_webview(move |platform| {
         let webview = platform.inner();
-        webview.connect_load_failed(|webview, _, uri, error| {
-            if error.matches(NetworkError::Cancelled)
-                || error.matches(PolicyError::FrameLoadInterruptedByPolicyChange)
-            {
-                return false;
+        let main_navigation_uri = Rc::new(RefCell::new(String::new()));
+
+        webview.connect_load_changed({
+            let main_navigation_uri = main_navigation_uri.clone();
+            move |webview, event| {
+                if matches!(event, LoadEvent::Started | LoadEvent::Redirected) {
+                    if let Some(uri) = webview.uri() {
+                        *main_navigation_uri.borrow_mut() = uri.to_string();
+                    }
+                }
             }
-            show_retry_page(webview, uri);
-            true
         });
-        webview.connect_load_failed_with_tls_errors(|webview, uri, _, _| {
-            show_retry_page(webview, uri);
-            true
+
+        webview.connect_load_failed({
+            let main_navigation_uri = main_navigation_uri.clone();
+            move |webview, _, uri, error| {
+                if error.matches(NetworkError::Cancelled)
+                    || error.matches(PolicyError::FrameLoadInterruptedByPolicyChange)
+                {
+                    return false;
+                }
+                if !is_top_level_failure(uri, &main_navigation_uri.borrow()) {
+                    return false;
+                }
+                show_retry_page(webview, uri);
+                true
+            }
+        });
+        webview.connect_load_failed_with_tls_errors({
+            let main_navigation_uri = main_navigation_uri.clone();
+            move |webview, uri, _, _| {
+                if !is_top_level_failure(uri, &main_navigation_uri.borrow()) {
+                    return false;
+                }
+                show_retry_page(webview, uri);
+                true
+            }
         });
         webview.load_uri(start.as_str());
     })
@@ -70,5 +104,18 @@ mod tests {
             let page = offline_page(uri);
             assert!(page.contains("href=\"https://copilot.com/chat\""));
         }
+    }
+
+    #[test]
+    fn only_matching_main_navigation_uri_is_top_level() {
+        assert!(is_top_level_failure(
+            "https://copilot.com/chat",
+            "https://copilot.com/chat"
+        ));
+        assert!(!is_top_level_failure(
+            "https://ads.example/iframe",
+            "https://copilot.com/chat"
+        ));
+        assert!(!is_top_level_failure("https://copilot.com/chat", ""));
     }
 }
