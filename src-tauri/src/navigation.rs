@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::Cell;
 use std::rc::Rc;
 
 use url::Url;
@@ -21,10 +21,11 @@ fn offline_page(failing_uri: &str) -> String {
     include_str!("offline.html").replace("{{RETRY_URL}}", &escape_html(&url))
 }
 
-/// `load-failed` can fire for subframe loads. Only treat a failure as top-level when
-/// the failing URI matches the main-frame navigation tracked via `load-changed`.
-fn is_top_level_failure(failing_uri: &str, main_navigation_uri: &str) -> bool {
-    !main_navigation_uri.is_empty() && failing_uri == main_navigation_uri
+/// WebKitWebView `load-changed` tracks the main-frame page load. Only show Retry
+/// while that main-frame navigation is in progress, so same-URI iframe failures
+/// after Copilot has loaded cannot replace the window.
+fn should_show_retry(main_frame_loading: bool) -> bool {
+    main_frame_loading
 }
 
 #[cfg(target_os = "linux")]
@@ -45,40 +46,40 @@ pub fn attach(window: &tauri::WebviewWindow, start: Url) -> tauri::Result<()> {
 
     window.with_webview(move |platform| {
         let webview = platform.inner();
-        let main_navigation_uri = Rc::new(RefCell::new(String::new()));
+        let main_frame_loading = Rc::new(Cell::new(false));
 
         webview.connect_load_changed({
-            let main_navigation_uri = main_navigation_uri.clone();
-            move |webview, event| {
-                if matches!(event, LoadEvent::Started | LoadEvent::Redirected) {
-                    if let Some(uri) = webview.uri() {
-                        *main_navigation_uri.borrow_mut() = uri.to_string();
-                    }
-                }
+            let main_frame_loading = main_frame_loading.clone();
+            move |_, event| match event {
+                LoadEvent::Started => main_frame_loading.set(true),
+                LoadEvent::Finished => main_frame_loading.set(false),
+                _ => {}
             }
         });
 
         webview.connect_load_failed({
-            let main_navigation_uri = main_navigation_uri.clone();
+            let main_frame_loading = main_frame_loading.clone();
             move |webview, _, uri, error| {
                 if error.matches(NetworkError::Cancelled)
                     || error.matches(PolicyError::FrameLoadInterruptedByPolicyChange)
                 {
                     return false;
                 }
-                if !is_top_level_failure(uri, &main_navigation_uri.borrow()) {
+                if !should_show_retry(main_frame_loading.get()) {
                     return false;
                 }
+                main_frame_loading.set(false);
                 show_retry_page(webview, uri);
                 true
             }
         });
         webview.connect_load_failed_with_tls_errors({
-            let main_navigation_uri = main_navigation_uri.clone();
+            let main_frame_loading = main_frame_loading.clone();
             move |webview, uri, _, _| {
-                if !is_top_level_failure(uri, &main_navigation_uri.borrow()) {
+                if !should_show_retry(main_frame_loading.get()) {
                     return false;
                 }
+                main_frame_loading.set(false);
                 show_retry_page(webview, uri);
                 true
             }
@@ -107,15 +108,8 @@ mod tests {
     }
 
     #[test]
-    fn only_matching_main_navigation_uri_is_top_level() {
-        assert!(is_top_level_failure(
-            "https://copilot.com/chat",
-            "https://copilot.com/chat"
-        ));
-        assert!(!is_top_level_failure(
-            "https://ads.example/iframe",
-            "https://copilot.com/chat"
-        ));
-        assert!(!is_top_level_failure("https://copilot.com/chat", ""));
+    fn retry_only_while_main_frame_loading() {
+        assert!(should_show_retry(true));
+        assert!(!should_show_retry(false));
     }
 }
