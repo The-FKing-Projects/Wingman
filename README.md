@@ -11,7 +11,7 @@ An internet connection is required.
 
 ## Current release
 
-[v0.2.3-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.3-alpha)
+[v0.2.4-alpha](https://github.com/The-FKing-Projects/Wingman/releases/tag/v0.2.4-alpha)
 is an early testing release, not a stable release.
 
 - Native single-window application and desktop launcher.
@@ -23,8 +23,9 @@ is an early testing release, not a stable release.
 0.2.2 replaced the Tauri starter icons with the Wingman echelon icon. 0.2.3
 makes the window's Wayland app ID and X11 class match `Wingman.desktop`, so KDE
 Plasma shows the icon in the taskbar and title bar as well as the application
-menu. Application behavior is otherwise unchanged from 0.2.1, so the 0.2.1 test
-results below still describe the runtime. After upgrading, Plasma may keep a
+menu. 0.2.4 bundles GStreamer base and good plugins in the AppImage to address
+the missing `appsink` warning. Browsing, authentication, and shutdown behavior
+are otherwise unchanged from 0.2.1. After upgrading, Plasma may keep a
 generic taskbar icon until its cache refreshes; restarting the panel with
 `systemctl --user restart plasma-plasmashell` or logging out fixes it.
 
@@ -41,8 +42,8 @@ where login also survived close/reopen; zypper required an exception for the
 unsigned package.
 The AppImage launched and signed in on the Ubuntu 26.04.1 host, but showed the
 same shutdown crash and restart sign-in failure as the DEB there. The v0.2.3 and
-earlier AppImages report a missing GStreamer `appsink` element; later builds
-bundle the GStreamer base and good plugins.
+earlier AppImages report a missing GStreamer `appsink` element; the 0.2.4
+AppImage bundles the GStreamer base and good plugins.
 There is not yet a tested cross-distribution support matrix. Packages depend on
 their host's native libraries; an AppImage does not guarantee compatibility with
 every Linux distribution or graphics driver.
@@ -54,14 +55,14 @@ alpha assets:
 
 ```sh
 # Debian/Ubuntu: run from the download directory.
-sudo apt install ./Wingman_0.2.3_amd64.deb
+sudo apt install ./Wingman_0.2.4_amd64.deb
 
 # Fedora/RPM systems: smoke-tested in a Fedora 45 GNOME/Wayland VM.
-sudo dnf install ./Wingman-0.2.3-1.x86_64.rpm
+sudo dnf install ./Wingman-0.2.4-1.x86_64.rpm
 
 # AppImage: launches on Ubuntu 26.04.1; see known issues below.
-chmod +x Wingman_0.2.3_amd64.AppImage
-./Wingman_0.2.3_amd64.AppImage
+chmod +x Wingman_0.2.4_amd64.AppImage
+./Wingman_0.2.4_amd64.AppImage
 ```
 
 Use only the command appropriate to your distribution. Launch an installed package
